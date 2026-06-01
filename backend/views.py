@@ -1,10 +1,12 @@
 from django.shortcuts import render
-from rest_framework.simplejwt.authentication import JWTAuthentication
-from views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.middleware.csrf import get_token
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from backend.authentication import CookieOrHeaderJWTAuthentication
+from rest_framework.permissions import IsAuthenticated
 import base64
 import hashlib
 import secrets
@@ -12,6 +14,7 @@ import string
 from django.conf import settings
 import requests
 from .models import User
+# invalidate
 
 # Create your views here.
 def generate_pkce_pair():
@@ -47,7 +50,7 @@ def get_google_user_info(access_token):
     if not email:
         email_resp = requests.get('https://www.googleapis.com/oauth2/v1/userinfo', headers=headers)
         if email_resp.status_code == 200:
-          primary_email = next((e for e in email_resp.json() if e.get('primary'), None))
+          primary_email = next((e for e in email_resp.json() if e.get('primary')), None)
           email = primary_email['email'] if primary_email else ''  
 
     return google_user, email
@@ -142,6 +145,16 @@ class GoogleBrowserAuthView(APIView):
         get_token(request)  # ensure CSRF cookie is set
         return response
 
+class BrowserLogoutView(APIView):
+    authentication_classes = [CookieOrHeaderJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        response = Response({'message': 'Logged out'})
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+        return response
+
 class CallbackView(APIView):
     def get(self, request):
         code = request.GET.get('code')
@@ -161,6 +174,18 @@ class MeView(APIView):
             'avatar': u.avatar_url,
             'google_login': u.google.login
         })
+
+    def get_user_dashboard(user_id):
+        cache_key = f'user_dashboard:{user_id}'
+        data = cache.get(cache_key)
+
+        if not data:
+            data = {
+                'recent_activities': list(User.objects.filter(id=user_id).values()),
+                'stats': compute_user_stats(user_id)
+            }
+            cache.set(cache_key, data, timeout=300)
+        return data
 
 class UserListView(APIView):
     def get(self, request):
