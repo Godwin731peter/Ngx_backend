@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
+import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -79,12 +81,22 @@ WSGI_APPLICATION = 'ng_stocks_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+db_url = os.getenv('DATABASE_URL')
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(default=config('db_url'))
 }
+
+CLIENT_ID  = os.getenv('GOOGLE_CLIENT_ID')
+CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+SECRET_KEY = os.getenv('SECRET_KEY')
+REDIRECT_URI = os.getenv('REDIRECT_URI') 
+
+# Cookie security
+CSRF_COOKIE_HTTPONLY = False        # frontend needs to read it
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
 
 CORS_ALLOWED_ORIGINS = [
     'https://ngx-stocks.vercel.app',  # frontend developer's Vercel domain
