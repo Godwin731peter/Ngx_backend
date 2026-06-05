@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -81,15 +81,16 @@ WSGI_APPLICATION = 'ng_stocks_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-db_url = os.getenv('DATABASE_URL')
+#db_url = os.getenv('DATABASE_URL')
+DATABASE_URL = config('DATABASE_URL', default='')
 
 DATABASES = {
-    'default': dj_database_url.config(default=config('db_url'))
+    'default': dj_database_url.parse(DATABASE_URL)
 }
 
 CLIENT_ID  = os.getenv('GOOGLE_CLIENT_ID')
 CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
-SECRET_KEY = os.getenv('SECRET_KEY')
+#SECRET_KEY = os.getenv('SECRET_KEY')
 REDIRECT_URI = os.getenv('REDIRECT_URI') 
 
 # Cookie security
